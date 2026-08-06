@@ -110,19 +110,41 @@ if archivo_subido is not None:
                     st.warning("⚠️ No se encontraron pasajes válidos para procesar.")
                 else:
                     df_final = pd.concat(res_dfs, ignore_index=True)
+                    
+                    # Preparar columnas base para los cálculos matemáticos
+                    df_final['Continúan'] = 0
+                    df_final['Total_Oculto'] = 0
+                    df_final['Total tramo ciudad'] = None # Esta será nuestra columna final
+                    
+                    # Cálculo de matemática continua por folio
                     for folio, group in df_final.groupby('Folio', sort=False):
                         idx_list = group.index.tolist()
                         for j, i in enumerate(idx_list):
-                            if j == 0: df_final.at[i, 'Continúan'] = 0
-                            else: df_final.at[i, 'Continúan'] = df_final.at[idx_list[j-1], 'Total'] - df_final.at[i, 'Bajan']
-                            df_final.at[i, 'Total'] = df_final.at[i, 'Continúan'] + df_final.at[i, 'Suben']
+                            if j == 0: 
+                                df_final.at[i, 'Continúan'] = 0
+                            else: 
+                                df_final.at[i, 'Continúan'] = df_final.at[idx_list[j-1], 'Total_Oculto'] - df_final.at[i, 'Bajan']
+                            
+                            df_final.at[i, 'Total_Oculto'] = df_final.at[i, 'Continúan'] + df_final.at[i, 'Suben']
                     
+                    # MAGIA: Calcular "Total tramo ciudad" solo en la última parada de cada ciudad
+                    for i in range(len(df_final)):
+                        # Es la última parada de este Folio?
+                        es_ultimo_folio = (i == len(df_final) - 1) or (df_final.at[i, 'Folio'] != df_final.at[i+1, 'Folio'])
+                        # Es la última parada dentro de esta Ciudad?
+                        es_ultima_ciudad = (i == len(df_final) - 1) or (df_final.at[i, 'Ciudad'] != df_final.at[i+1, 'Ciudad'])
+                        
+                        # Si se cumple cualquiera, imprimimos el resultado, sino lo dejamos en blanco (None)
+                        if es_ultimo_folio or es_ultima_ciudad:
+                            df_final.at[i, 'Total tramo ciudad'] = df_final.at[i, 'Total_Oculto']
+
                     dias_semana = {0: 'LUNES', 1: 'MARTES', 2: 'MIÉRCOLES', 3: 'JUEVES', 4: 'VIERNES', 5: 'SÁBADO', 6: 'DOMINGO'}
                     df_final['Día'] = df_final['DateTime'].dt.dayofweek.map(dias_semana)
                     df_final['Fecha salida'] = df_final['DateTime'].dt.strftime('%d/%m/%Y')
                     df_final['Hora'] = df_final['DateTime'].dt.strftime('%H:%M')
                     
-                    cols = ['Folio', 'Fecha salida', 'Día', 'Ciudad', 'Hora', 'Paradero', 'Bajan', 'Suben', 'Continúan', 'Total', 'Revisar orden']
+                    # Seleccionamos las columnas a mostrar, reemplazando 'Total' por 'Total tramo ciudad'
+                    cols = ['Folio', 'Fecha salida', 'Día', 'Ciudad', 'Hora', 'Paradero', 'Bajan', 'Suben', 'Continúan', 'Total tramo ciudad', 'Revisar orden']
                     df_final = df_final[cols]
                     
                     # Preparar el Excel en memoria para descarga
@@ -132,9 +154,9 @@ if archivo_subido is not None:
                     
                     st.success("✅ ¡Reporte generado con éxito!")
                     
-                    # Mostrar una muestra en pantalla
+                    # Mostrar una muestra en pantalla (Llenamos los 'None' con espacio vacío para que se vea limpio)
                     st.write("👀 **Vista previa de los datos:**")
-                    st.dataframe(df_final.head(10)) 
+                    st.dataframe(df_final.fillna("")) 
                     
                     # Botón gigante de descarga
                     st.download_button(
