@@ -53,7 +53,7 @@ def get_stop_order(ruta_str, paradero):
     return 999
 
 # --- INTERFAZ WEB ---
-st.title("🚍 Generador de Reporte de Ocupación")
+st.title("🚍 Generador de Reporte por Tramos")
 st.markdown("Sube tu archivo **Reporte resumen de ventas** original y obtén al instante el reporte de ocupación ordenado.")
 
 archivo_subido = st.file_uploader("Arrastra tu Excel aquí", type=["xlsx"])
