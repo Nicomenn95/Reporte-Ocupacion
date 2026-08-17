@@ -6,7 +6,7 @@ import io
 from openpyxl.styles import PatternFill, Font
 
 # --- CONFIGURACIÓN VISUAL DE LA PÁGINA ---
-st.set_page_config(page_title="Reporte Ocupación TPL", page_icon="🚍", layout="centered")
+st.set_page_config(page_title="Reporte Por Tramo", page_icon="🚍", layout="centered")
 
 # --- DICCIONARIO DE RUTAS ---
 RUTAS_TPL = {
